@@ -1,51 +1,739 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Arduino UNO Basic Collection</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arduino UNO Basic Collection</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #181c27;
+    --bg3: #1e2335;
+    --surface: #222840;
+    --border: rgba(255,255,255,0.08);
+    --border-hover: rgba(94,234,185,0.35);
+    --teal: #5eeab9;
+    --teal-dim: rgba(94,234,185,0.12);
+    --teal-glow: rgba(94,234,185,0.06);
+    --text: #e8eaf2;
+    --text-muted: #8a90a8;
+    --text-dim: #555d7a;
+    --tag-bg: rgba(94,234,185,0.1);
+    --tag-text: #5eeab9;
+    --chip-bg: rgba(255,255,255,0.06);
+    --chip-text: #9aa0bb;
+    --radius: 10px;
+    --sidebar-w: 360px;
+  }
+  [data-theme="day"] {
+    --bg: #f4f5f8;
+    --bg2: #ffffff;
+    --bg3: #eef0f5;
+    --surface: #ffffff;
+    --border: rgba(0,0,0,0.09);
+    --border-hover: rgba(15,120,80,0.4);
+    --teal: #0f7850;
+    --teal-dim: rgba(15,120,80,0.08);
+    --teal-glow: rgba(15,120,80,0.04);
+    --text: #1a1d2e;
+    --text-muted: #555d7a;
+    --text-dim: #9aa0bb;
+    --tag-bg: rgba(15,120,80,0.1);
+    --tag-text: #0f7850;
+    --chip-bg: rgba(0,0,0,0.06);
+    --chip-text: #555d7a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Topbar ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 20px;
+    height: 56px;
+  }
+  .topbar-logo {
+    display: flex; align-items: center; gap: 10px;
+    text-decoration: none;
+  }
+  .logo-icon {
+    width: 30px; height: 30px;
+    background: var(--teal-dim);
+    border: 1px solid var(--teal);
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .logo-icon svg { width: 16px; height: 16px; fill: var(--teal); }
+  .logo-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px; font-weight: 500;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .logo-sub { font-size: 10px; color: var(--text-muted); font-weight: 400; }
+  .topbar-spacer { flex: 1; }
+  .search-wrap {
+    position: relative; display: flex; align-items: center;
+  }
+  .search-icon {
+    position: absolute; left: 10px;
+    color: var(--text-dim); pointer-events: none;
+  }
+  .search-icon svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 2; }
+  #searchInput {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    padding: 7px 12px 7px 32px;
+    width: 200px;
+    outline: none;
+    transition: border-color .2s, width .2s;
+  }
+  #searchInput:focus { border-color: var(--teal); width: 240px; }
+  #searchInput::placeholder { color: var(--text-dim); }
+  .theme-switch {
+    display: flex; gap: 2px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+  }
+  .theme-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500;
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted);
+    padding: 4px 10px; border-radius: 6px;
+    transition: background .15s, color .15s;
+  }
+  .theme-btn.active, .theme-btn:hover { background: var(--teal-dim); color: var(--teal); }
+  .sidebar-toggle {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500;
+    background: var(--teal-dim);
+    border: 1px solid var(--teal);
+    color: var(--teal);
+    padding: 5px 12px; border-radius: 8px; cursor: pointer;
+    transition: background .15s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sidebar-toggle svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .sidebar-toggle:hover { background: rgba(94,234,185,0.2); }
+
+  /* ── Layout ── */
+  .content { display: flex; flex: 1; overflow: hidden; height: calc(100vh - 56px); }
+
+  /* ── Filter bar ── */
+  .projects-panel { flex: 1; overflow-y: auto; padding: 20px; }
+  .filter-bar {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;
+  }
+  .filter-label { font-size: 12px; color: var(--text-dim); margin-right: 4px; }
+  .filter-chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 12px; font-weight: 500;
+    padding: 5px 12px; border-radius: 20px;
+    background: var(--chip-bg); color: var(--chip-text);
+    border: 1px solid var(--border); cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .filter-chip.active { background: var(--teal-dim); color: var(--teal); border-color: var(--teal); }
+  .count-badge {
+    font-size: 12px; color: var(--text-dim); margin-left: auto; white-space: nowrap;
+  }
+
+  /* ── Grid ── */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+  }
+  .project-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color .2s, transform .15s, background .2s;
+    display: flex; flex-direction: column; gap: 10px;
+    position: relative; overflow: hidden;
+  }
+  .project-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: var(--teal); opacity: 0;
+    transition: opacity .2s;
+  }
+  .project-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+  .project-card:hover::before { opacity: 1; }
+  .project-card.selected {
+    border-color: var(--teal);
+    background: var(--teal-glow);
+  }
+  .project-card.selected::before { opacity: 1; }
+  .card-icon {
+    width: 38px; height: 38px;
+    background: var(--teal-dim);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-icon svg { width: 18px; height: 18px; stroke: var(--teal); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .card-name {
+    font-size: 13px; font-weight: 600;
+    color: var(--text); line-height: 1.35;
+  }
+  .card-desc {
+    font-size: 12px; color: var(--text-muted); line-height: 1.5; flex: 1;
+  }
+  .card-footer { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+  .tag {
+    font-size: 10px; font-weight: 500;
+    background: var(--tag-bg); color: var(--tag-text);
+    padding: 3px 7px; border-radius: 4px;
+    letter-spacing: .02em;
+  }
+  .tag.cat {
+    background: var(--chip-bg); color: var(--chip-text);
+  }
+  .card-actions {
+    display: flex; gap: 6px; margin-top: 4px;
+  }
+  .btn-action {
+    font-family: 'Inter', sans-serif;
+    font-size: 11px; font-weight: 500;
+    padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--bg3); color: var(--text-muted); cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .btn-action svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .btn-action:hover { background: var(--teal-dim); color: var(--teal); border-color: var(--teal); }
+  .btn-action.primary {
+    background: var(--teal-dim); color: var(--teal); border-color: var(--teal);
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    grid-column: 1/-1;
+    text-align: center; padding: 60px 20px;
+    color: var(--text-muted);
+  }
+  .empty-state svg { width: 40px; height: 40px; stroke: var(--text-dim); fill: none; stroke-width: 1.5; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  /* ── Sidebar ── */
+  .preview-sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    transition: width .3s ease, opacity .3s;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .preview-sidebar.collapsed { width: 0; opacity: 0; pointer-events: none; }
+  .sidebar-head {
+    padding: 16px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sidebar-project-name {
+    font-size: 11px; font-weight: 500;
+    color: var(--teal); text-transform: uppercase; letter-spacing: .08em;
+  }
+  .sidebar-title { font-size: 15px; font-weight: 600; color: var(--text); }
+  .sidebar-desc { font-size: 12px; color: var(--text-muted); line-height: 1.5; margin-top: 2px; }
+  .sidebar-links {
+    display: flex; gap: 8px; margin-top: 10px;
+  }
+  .sidebar-link {
+    font-size: 12px; font-weight: 500;
+    padding: 5px 12px; border-radius: 6px;
+    text-decoration: none;
+    border: 1px solid var(--teal);
+    background: var(--teal-dim); color: var(--teal);
+    display: flex; align-items: center; gap: 5px;
+    transition: background .15s;
+  }
+  .sidebar-link:hover { background: rgba(94,234,185,0.2); }
+  .sidebar-link svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+  .sidebar-link.disabled { opacity: .35; pointer-events: none; }
+  .sidebar-link.secondary {
+    background: var(--bg3); color: var(--text-muted); border-color: var(--border);
+  }
+  .sidebar-link.secondary:hover { background: var(--surface); }
+  .preview-frame-wrap {
+    flex: 1; position: relative; background: var(--bg3);
+  }
+  #previewFrame {
+    width: 100%; height: 100%; border: none; display: block;
+  }
+  .sidebar-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 12px; color: var(--text-dim); padding: 32px;
+    text-align: center;
+  }
+  .sidebar-placeholder svg { width: 48px; height: 48px; stroke: currentColor; fill: none; stroke-width: 1.2; opacity: .4; }
+  .sidebar-placeholder p { font-size: 13px; line-height: 1.6; }
+  .sidebar-info-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    padding: 12px 18px; border-bottom: 1px solid var(--border);
+  }
+  .info-cell { display: flex; flex-direction: column; gap: 2px; }
+  .info-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .06em; }
+  .info-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-muted); }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
 </head>
 <body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div class="title-wrap">
-        <h1>Arduino UNO Basic Collection</h1>
-        <p>Project Browser</p>
-      </div>
 
-      <div class="topbar-controls">
-        <div class="theme-switch" role="group" aria-label="Theme mode">
-          <button type="button" class="theme-btn" data-theme-option="day">Day</button>
-          <button type="button" class="theme-btn" data-theme-option="dark">Dark</button>
-          <button type="button" class="theme-btn" data-theme-option="auto">Auto</button>
-        </div>
-
-        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="previewSidebar">
-          Preview
-        </button>
-      </div>
-    </header>
-
-    <main class="content">
-      <section class="projects-panel">
-        <div id="projectsGrid" class="projects-grid" aria-live="polite"></div>
-      </section>
-
-      <aside id="previewSidebar" class="preview-sidebar is-open">
-        <div class="sidebar-head">
-          <h2 id="sidebarTitle">Tinkercad Preview</h2>
-          <a id="sidebarOpenLink" class="sidebar-link disabled" href="#" target="_blank" rel="noopener noreferrer">Open In New Tab</a>
-        </div>
-        <p id="sidebarSubtext" class="sidebar-subtext">Select a project and choose "Open Tinkercad -> Open in Sidebar".</p>
-        <div class="preview-frame-wrap">
-          <iframe id="previewFrame" title="Tinkercad Preview" src="about:blank" loading="lazy"></iframe>
-        </div>
-      </aside>
-    </main>
+<header class="topbar">
+  <a class="topbar-logo" href="#">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">Arduino UNO</div>
+      <div class="logo-sub">Basic Collection</div>
+    </div>
+  </a>
+  <div class="topbar-spacer"></div>
+  <div class="search-wrap">
+    <span class="search-icon">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    </span>
+    <input type="text" id="searchInput" placeholder="Search projects…" autocomplete="off">
   </div>
+  <div class="theme-switch">
+    <button class="theme-btn" data-theme="dark">Dark</button>
+    <button class="theme-btn active" data-theme="auto">Auto</button>
+    <button class="theme-btn" data-theme="day">Day</button>
+  </div>
+  <button class="sidebar-toggle" id="sidebarToggle">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+    Preview
+  </button>
+</header>
 
-  <script src="projects-data.js"></script>
-  <script src="script.js"></script>
+<main class="content">
+  <section class="projects-panel">
+    <div class="filter-bar" id="filterBar">
+      <span class="filter-label">Category:</span>
+      <button class="filter-chip active" data-cat="all">All</button>
+    </div>
+    <div class="projects-grid" id="projectsGrid"></div>
+  </section>
+
+  <aside class="preview-sidebar" id="previewSidebar">
+    <div class="sidebar-head" id="sidebarHead">
+      <div class="sidebar-project-name" id="sidebarProjectName">Tinkercad Preview</div>
+      <div class="sidebar-title" id="sidebarTitle">Select a project</div>
+      <div class="sidebar-desc" id="sidebarDesc">Click a project card, then "Open in Sidebar" to preview its Tinkercad circuit here.</div>
+      <div class="sidebar-links" id="sidebarLinks">
+        <a id="sidebarOpenLink" class="sidebar-link disabled" href="#" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+          Open in Tinkercad
+        </a>
+        <a id="sidebarGithubLink" class="sidebar-link secondary disabled" href="#" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          View Code
+        </a>
+      </div>
+    </div>
+    <div class="sidebar-info-grid" id="sidebarInfoGrid" style="display:none">
+      <div class="info-cell"><span class="info-label">Category</span><span class="info-val" id="infoCat">—</span></div>
+      <div class="info-cell"><span class="info-label">Components</span><span class="info-val" id="infoComp">—</span></div>
+      <div class="info-cell"><span class="info-label">Difficulty</span><span class="info-val" id="infoDiff">—</span></div>
+      <div class="info-cell"><span class="info-label">Sensor type</span><span class="info-val" id="infoSensor">—</span></div>
+    </div>
+    <div class="preview-frame-wrap">
+      <div class="sidebar-placeholder" id="sidebarPlaceholder">
+        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/><path d="M7 7h.01M11 7h6M7 11h.01M11 11h6"/></svg>
+        <p>Select a project and click<br><strong style="color:var(--text-muted)">"Open in Sidebar"</strong><br>to preview its circuit.</p>
+      </div>
+      <iframe id="previewFrame" title="Tinkercad Preview" src="about:blank" loading="lazy" style="display:none"></iframe>
+    </div>
+  </aside>
+</main>
+
+<script>
+const PROJECTS = [
+  {
+    id: "auto-door-pir",
+    name: "Auto Door – PIR",
+    desc: "A motion-activated door that opens automatically when someone approaches, using a passive infrared sensor and servo motor.",
+    cat: "Automation",
+    tags: ["PIR", "Servo"],
+    icon: "door",
+    difficulty: "Beginner",
+    components: "PIR, Servo",
+    sensor: "Infrared",
+    folder: "Auto door pir",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Auto%20door%20pir"
+  },
+  {
+    id: "bt-light",
+    name: "BT Light Control",
+    desc: "Control an LED remotely over Bluetooth using a smartphone app and HC-05 module.",
+    cat: "Wireless",
+    tags: ["Bluetooth", "HC-05"],
+    icon: "bluetooth",
+    difficulty: "Beginner",
+    components: "HC-05, LED",
+    sensor: "None",
+    folder: "BT_LightControl",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/BT_LightControl"
+  },
+  {
+    id: "button-quiz",
+    name: "Button Quiz Game",
+    desc: "A buzzer-and-button quiz game where players race to press their button first. Includes LED indicators and scoring logic.",
+    cat: "Game",
+    tags: ["Buttons", "Buzzer"],
+    icon: "gamepad",
+    difficulty: "Beginner",
+    components: "Buttons, LEDs, Buzzer",
+    sensor: "None",
+    folder: "Button_quiz",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Button_quiz"
+  },
+  {
+    id: "dist-lcd",
+    name: "Distance on LCD",
+    desc: "Measures distance with an HC-SR04 ultrasonic sensor and displays the reading live on a 16×2 LCD.",
+    cat: "Display",
+    tags: ["Ultrasonic", "LCD"],
+    icon: "ruler",
+    difficulty: "Beginner",
+    components: "HC-SR04, LCD 16×2",
+    sensor: "Ultrasonic",
+    folder: "Dist_from_UltraSonic_on_LCD",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Dist_from_UltraSonic_on_LCD"
+  },
+  {
+    id: "distance-sensor",
+    name: "Distance Sensor",
+    desc: "Basic ultrasonic ranging with HC-SR04 — triggers LEDs or a buzzer when objects get within a set threshold.",
+    cat: "Sensor",
+    tags: ["Ultrasonic", "HC-SR04"],
+    icon: "radio",
+    difficulty: "Beginner",
+    components: "HC-SR04, LEDs",
+    sensor: "Ultrasonic",
+    folder: "Distance_sensor",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Distance_sensor"
+  },
+  {
+    id: "fan-regulator",
+    name: "Fan Regulator",
+    desc: "Control fan speed by typing a value in the Serial Monitor. Demonstrates PWM motor speed control via serial input.",
+    cat: "Motor",
+    tags: ["PWM", "Serial"],
+    icon: "fan",
+    difficulty: "Intermediate",
+    components: "DC motor, L298N",
+    sensor: "None",
+    folder: "FanRegulator_Serialinput",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/FanRegulator_Serialinput"
+  },
+  {
+    id: "lcd-print",
+    name: "LCD Basic Print",
+    desc: "Hello World on an LCD — foundational project for printing scrolling text, custom characters, and cursor control.",
+    cat: "Display",
+    tags: ["LCD", "16×2"],
+    icon: "monitor",
+    difficulty: "Beginner",
+    components: "LCD 16×2, Potentiometer",
+    sensor: "None",
+    folder: "LCD_BasicPrint",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/LCD_BasicPrint"
+  },
+  {
+    id: "motion-sensor",
+    name: "Motion Sensor",
+    desc: "PIR-based motion detection that triggers an alert LED and buzzer. Includes adjustable sensitivity and delay.",
+    cat: "Sensor",
+    tags: ["PIR", "Buzzer"],
+    icon: "activity",
+    difficulty: "Beginner",
+    components: "PIR sensor, LED, Buzzer",
+    sensor: "Infrared",
+    folder: "Motion_sensor",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Motion_sensor"
+  },
+  {
+    id: "rgb-disco",
+    name: "RGB LED Disco",
+    desc: "Random colour cycling on an RGB LED — a fun showcase of analogWrite() and random colour generation.",
+    cat: "LED",
+    tags: ["RGB", "PWM"],
+    icon: "zap",
+    difficulty: "Beginner",
+    components: "RGB LED, Resistors",
+    sensor: "None",
+    folder: "RGB_LED_Random_disco",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/RGB_LED_Random_disco"
+  },
+  {
+    id: "rain-servo",
+    name: "Rain Sensor + Servo",
+    desc: "Detects rain with a resistive sensor and rotates a servo motor — useful as a model rain-activated awning or wiper.",
+    cat: "Automation",
+    tags: ["Rain", "Servo"],
+    icon: "cloud-rain",
+    difficulty: "Intermediate",
+    components: "Rain sensor, Servo",
+    sensor: "Resistive",
+    folder: "Rain_sensor_servo_movement",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Rain_sensor_servo_movement"
+  },
+  {
+    id: "water-level",
+    name: "Water Level Detector",
+    desc: "Multi-level tank water detector using conductive probes, with status LEDs and a buzzer alert on overflow.",
+    cat: "Sensor",
+    tags: ["Water", "LEDs"],
+    icon: "droplets",
+    difficulty: "Beginner",
+    components: "Probes, LEDs, Buzzer",
+    sensor: "Conductive",
+    folder: "Tank_Water_level_Detector",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Tank_Water_level_Detector"
+  },
+  {
+    id: "traffic-signal",
+    name: "Traffic Signal Pattern",
+    desc: "Classic red-amber-green traffic light simulation with accurate timing, demonstrating LED sequencing with delay().",
+    cat: "LED",
+    tags: ["LEDs", "Timing"],
+    icon: "traffic-cone",
+    difficulty: "Beginner",
+    components: "3× LEDs, Resistors",
+    sensor: "None",
+    folder: "Traffic_Signal_Pattern",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/Traffic_Signal_Pattern"
+  },
+  {
+    id: "ultrasonic-car",
+    name: "Ultrasonic Car",
+    desc: "An obstacle-avoiding robot car that scans for objects ahead with an HC-SR04 and steers away autonomously.",
+    cat: "Robot",
+    tags: ["Car", "Autonomous"],
+    icon: "cpu",
+    difficulty: "Advanced",
+    components: "HC-SR04, L298N, DC Motors",
+    sensor: "Ultrasonic",
+    folder: "UltraSonic_Car",
+    tinkercad: null,
+    github: "https://github.com/Quantum404AK/ArduinoUNO-BasicCollection/tree/main/UltraSonic_Car"
+  }
+];
+
+const ICONS = {
+  door: `<path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4l-1.5 16-9.5.5V6a2 2 0 0 1 2-2z"/>`,
+  bluetooth: `<polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5"/>`,
+  gamepad: `<line x1="6" y1="11" x2="10" y2="11"/><line x1="8" y1="9" x2="8" y2="13"/><line x1="15" y1="12" x2="15.01" y2="12"/><line x1="17" y1="10" x2="17.01" y2="10"/><rect x="2" y="6" width="20" height="12" rx="2"/>`,
+  ruler: `<path d="M21.3 8.7 8.7 21.3c-1 1-2.5 1-3.4 0l-2.6-2.6c-1-1-1-2.5 0-3.4L15.3 2.7c1-1 2.5-1 3.4 0l2.6 2.6c1 1 1 2.5 0 3.4Z"/><path d="m7.5 10.5 2 2"/><path d="m10.5 7.5 2 2"/><path d="m13.5 4.5 2 2"/><path d="m4.5 13.5 2 2"/>`,
+  radio: `<path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.1 19.1 19"/>`,
+  fan: `<path d="M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a6.082 6.082 0 0 1 7.002-8.618l-1.45 5.412a6.082 6.082 0 0 1 8.618 7.002l-5.412-1.45a6.082 6.082 0 0 1-7.002 8.618l1.45-5.412Z"/><circle cx="12" cy="12" r="2"/>`,
+  monitor: `<rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/>`,
+  activity: `<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>`,
+  zap: `<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>`,
+  "cloud-rain": `<path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/>`,
+  droplets: `<path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 6.6A10.97 10.97 0 0 0 14 3.02c.5 2.5 2 4.9 4 6.5s3 3.5 3 5.5a6.98 6.98 0 0 1-11.91 4.97"/>`,
+  "traffic-cone": `<path d="M9.3 6.2a4.55 4.55 0 0 0 5.4 0"/><path d="M7.9 10.7c.9.8 2.4 1.3 4.1 1.3s3.2-.5 4.1-1.3"/><path d="M13.9 3.5a2 2 0 0 0-3.8 0L3 20h18z"/><path d="M12 20v2"/>`,
+  cpu: `<rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2M15 20v2M2 15h2M2 9h2M20 15h2M20 9h2M9 2v2M9 20v2"/>`
+};
+
+const cats = [...new Set(PROJECTS.map(p => p.cat))].sort();
+const filterBar = document.getElementById('filterBar');
+const grid = document.getElementById('projectsGrid');
+const searchInput = document.getElementById('searchInput');
+const sidebar = document.getElementById('previewSidebar');
+const sidebarToggle = document.getElementById('sidebarToggle');
+const previewFrame = document.getElementById('previewFrame');
+const placeholder = document.getElementById('sidebarPlaceholder');
+const sidebarInfoGrid = document.getElementById('sidebarInfoGrid');
+
+let activeCat = 'all';
+let activeProject = null;
+let sidebarOpen = true;
+
+cats.forEach(cat => {
+  const btn = document.createElement('button');
+  btn.className = 'filter-chip';
+  btn.dataset.cat = cat;
+  btn.textContent = cat;
+  filterBar.appendChild(btn);
+});
+
+const countBadge = document.createElement('span');
+countBadge.className = 'count-badge';
+filterBar.appendChild(countBadge);
+
+function svgIcon(name) {
+  return `<svg viewBox="0 0 24 24">${ICONS[name] || ''}</svg>`;
+}
+
+function renderGrid() {
+  const q = searchInput.value.toLowerCase();
+  const filtered = PROJECTS.filter(p => {
+    const matchCat = activeCat === 'all' || p.cat === activeCat;
+    const matchQ = !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || p.tags.some(t => t.toLowerCase().includes(q));
+    return matchCat && matchQ;
+  });
+  countBadge.textContent = filtered.length + ' project' + (filtered.length !== 1 ? 's' : '');
+  grid.innerHTML = '';
+  if (!filtered.length) {
+    grid.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>No projects match your search.</p></div>`;
+    return;
+  }
+  filtered.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'project-card' + (activeProject?.id === p.id ? ' selected' : '');
+    card.innerHTML = `
+      <div class="card-icon">${svgIcon(p.icon)}</div>
+      <div class="card-name">${p.name}</div>
+      <div class="card-desc">${p.desc}</div>
+      <div class="card-footer">
+        <span class="tag cat">${p.cat}</span>
+        ${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+      </div>
+      <div class="card-actions">
+        <button class="btn-action primary open-sidebar" data-id="${p.id}">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M15 3v18"/></svg>
+          Open in Sidebar
+        </button>
+        <a class="btn-action" href="${p.github}" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+          Code
+        </a>
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  grid.querySelectorAll('.open-sidebar').forEach(btn => {
+    btn.addEventListener('click', () => openProject(btn.dataset.id));
+  });
+}
+
+function openProject(id) {
+  const p = PROJECTS.find(x => x.id === id);
+  if (!p) return;
+  activeProject = p;
+
+  document.getElementById('sidebarProjectName').textContent = p.cat;
+  document.getElementById('sidebarTitle').textContent = p.name;
+  document.getElementById('sidebarDesc').textContent = p.desc;
+  document.getElementById('infoCat').textContent = p.cat;
+  document.getElementById('infoComp').textContent = p.components;
+  document.getElementById('infoDiff').textContent = p.difficulty;
+  document.getElementById('infoSensor').textContent = p.sensor;
+  sidebarInfoGrid.style.display = 'grid';
+
+  const openLink = document.getElementById('sidebarOpenLink');
+  const ghLink = document.getElementById('sidebarGithubLink');
+  ghLink.href = p.github;
+  ghLink.classList.remove('disabled');
+
+  if (p.tinkercad) {
+    openLink.href = p.tinkercad;
+    openLink.classList.remove('disabled');
+    previewFrame.src = p.tinkercad;
+    previewFrame.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    openLink.href = '#';
+    openLink.classList.add('disabled');
+    previewFrame.src = 'about:blank';
+    previewFrame.style.display = 'none';
+    placeholder.style.display = 'flex';
+    placeholder.innerHTML = `
+      <svg viewBox="0 0 24 24"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+      <p><strong style="color:var(--text-muted)">${p.name}</strong><br><br>No Tinkercad link added yet.<br>Add the embed URL to <code style="font-size:11px;background:var(--bg3);padding:2px 5px;border-radius:4px">projects-data.js</code> to enable preview.</p>`;
+  }
+
+  if (!sidebarOpen) toggleSidebar();
+  renderGrid();
+}
+
+function toggleSidebar() {
+  sidebarOpen = !sidebarOpen;
+  sidebar.classList.toggle('collapsed', !sidebarOpen);
+}
+
+sidebarToggle.addEventListener('click', toggleSidebar);
+
+filterBar.addEventListener('click', e => {
+  const btn = e.target.closest('.filter-chip');
+  if (!btn) return;
+  activeCat = btn.dataset.cat;
+  filterBar.querySelectorAll('.filter-chip').forEach(b => b.classList.toggle('active', b === btn));
+  renderGrid();
+});
+
+searchInput.addEventListener('input', renderGrid);
+
+document.querySelectorAll('.theme-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const t = btn.dataset.theme;
+    document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (t === 'auto') {
+      document.documentElement.removeAttribute('data-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'day');
+    } else {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+  });
+});
+
+function applyAutoTheme() {
+  const active = document.querySelector('.theme-btn.active');
+  if (active?.dataset.theme === 'auto') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'day');
+  }
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyAutoTheme);
+applyAutoTheme();
+
+renderGrid();
+</script>
 </body>
 </html>
