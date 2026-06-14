@@ -1,0 +1,38 @@
+name: Update Website Project Data
+
+on:
+  push:
+    paths:
+      - "data.ods"
+      - "tools/generate_projects_data.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Generate projects-data.js
+        run: python tools/generate_projects_data.py
+
+      - name: Commit updated projects-data.js
+        run: |
+          if git diff --quiet -- projects-data.js; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects-data.js
+          git commit -m "chore: regenerate projects-data.js from data.ods"
+          git push

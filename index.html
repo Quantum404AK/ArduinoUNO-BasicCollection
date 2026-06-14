@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arduino UNO Basic Collection</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="title-wrap">
+        <h1>Arduino UNO Basic Collection</h1>
+        <p>Project Browser</p>
+      </div>
+
+      <div class="topbar-controls">
+        <div class="theme-switch" role="group" aria-label="Theme mode">
+          <button type="button" class="theme-btn" data-theme-option="day">Day</button>
+          <button type="button" class="theme-btn" data-theme-option="dark">Dark</button>
+          <button type="button" class="theme-btn" data-theme-option="auto">Auto</button>
+        </div>
+
+        <button id="sidebarToggle" class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="previewSidebar">
+          Preview
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="projects-panel">
+        <div id="projectsGrid" class="projects-grid" aria-live="polite"></div>
+      </section>
+
+      <aside id="previewSidebar" class="preview-sidebar is-open">
+        <div class="sidebar-head">
+          <h2 id="sidebarTitle">Tinkercad Preview</h2>
+          <a id="sidebarOpenLink" class="sidebar-link disabled" href="#" target="_blank" rel="noopener noreferrer">Open In New Tab</a>
+        </div>
+        <p id="sidebarSubtext" class="sidebar-subtext">Select a project and choose "Open Tinkercad -> Open in Sidebar".</p>
+        <div class="preview-frame-wrap">
+          <iframe id="previewFrame" title="Tinkercad Preview" src="about:blank" loading="lazy"></iframe>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <script src="projects-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
